@@ -1,0 +1,110 @@
+<!-- Code from d3-graph-gallery.com -->
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<!-- Load d3.js -->
+<script src="https://d3js.org/d3.v4.js"></script>
+
+<!-- Create a div where the graph will take place -->
+<div id="my_dataviz"></div>
+
+<textarea id="data" rows="10" cols="100">
+[
+  { "name": "freifunk-bbb-rhnk-wsw", "start": 5815, "end": 5855 },
+  { "name": "freifunk-bbb-philmel-alboin", "start": 5845, "end": 5865 },
+  { "name": "freifunk-bbb-philmel-autobahn", "start": 5280, "end": 5300 },
+  { "name": "ffbbb-philmel-vaterhaus", "start": 5610, "end": 5630 },
+  { "name": "freifunk-bbb-philmel-n", "start": 5490, "end": 5510 },
+  { "name": "freifunk-bbb-philmel-o", "start": 5300, "end": 5340 },
+  { "name": "freifunk-bbb-philmel-s", "start": 5660, "end": 5700 },
+  { "name": "freifunk-bbb-philmel-w", "start": 5570, "end": 5590 }
+]
+</textarea>
+
+<button>Update chart</button>
+
+<script>
+
+  // set the dimensions and margins of the graph
+  var margin = {top: 20, right: 30, bottom: 40, left: 200};
+  var width =  window.innerWidth - margin.left - margin.right;
+  var height = 512 - margin.top - margin.bottom;
+
+  // append the svg object to the body of the page
+  var svg = d3.select("#my_dataviz")
+    .append("svg")
+      .attr("width", width + margin.left + margin.right)
+      .attr("height", height + margin.top + margin.bottom)
+    .append("g")
+       .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+  // linear scale for x axis
+  var x = d3.scaleLinear()
+    .domain([5170, 5865])
+    .range([ 0, width]);
+
+  // calculate number of ticks for given domain
+  // one tick every 5 MHz
+  var ticks = (x.domain()[1] - x.domain()[0]) / 5;
+
+  svg.append("g").attr("id", "xaxis")
+  svg.append("g").attr("id", "yaxis")
+  svg.append("g").attr("id", "grid")
+
+  // gridlines in x axis function
+  function make_x_gridlines() {
+    return d3.axisBottom(x).ticks(ticks)
+  }
+
+  d3.select("button").on("click", function() {
+    data = JSON.parse(d3.select("textarea").node().value);
+    draw(data);
+  });
+
+  var draw = function(data) {
+
+    data.sort(function(a, b) { return a.start - b.start })
+
+    svg.attr("height", data.length * 30)
+
+    // add labels for x axis
+    // y position depends on number of number of data points
+    svg.select("#xaxis")
+      .attr("transform", "translate(0," + data.length * 30 + ")")
+      .call(d3.axisBottom(x).ticks(ticks/2))
+      .selectAll("text")
+      .attr("transform", "translate(-10,0)rotate(-45)")
+      .style("text-anchor", "end");
+
+    // Y axis
+    var y = d3.scaleBand()
+      .range([ 0, data.length * 30 ])
+      .domain(data.map(function(d) { return d.name; }))
+
+    svg.select("#yaxis")
+     .call(d3.axisLeft(y));
+
+    // add the X gridlines
+    svg.select("#grid")
+        .attr("class", "grid")
+        .attr("transform", "translate(0, " + data.length * 30 + ")")
+        .style("opacity", 0.5)
+        .call(make_x_gridlines()
+            .tickSize(-(data.length * 30))
+            .tickFormat("")
+        )
+
+    //Bars
+    svg.selectAll("myRect")
+      .data(data)
+      .enter()
+      .append("rect")
+      .attr("x", function(d) { return x(d.start); })
+      .attr("y", function(d, i) { return y(d.name) + 5; })
+      .attr("width", function(d) { return x(d.end) - x(d.start); })
+      .attr("height", 20 )
+      .attr("fill", "steelblue")
+
+}
+
+</script>
